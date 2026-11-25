@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Kosakata Video</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#121212);--ink:light-dark(#141414,#f1f1ee);--mute:light-dark(#62625e,#a3a39d);--line:light-dark(#e4e4df,#2c2c2a);--panel:light-dark(#f6f6f2,#1b1b1a);--hl:#ffe14d;--acc:light-dark(#e2451f,#ff7a55);--slang:light-dark(#7c3aed,#b794ff)}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:1240px;margin:0 auto;padding-block:24px 48px;padding-left:max(5vw,16px,env(safe-area-inset-left,0px));padding-right:max(5vw,16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:end;justify-content:space-between;margin-bottom:18px}
+h1{font:800 clamp(32px,5vw,46px)/1.05 Outfit,sans-serif;letter-spacing:-.02em;margin:0}
+h1 mark{background:var(--hl);color:#141414;padding:0 .12em;border-radius:4px}
+.lead{margin:6px 0 0;color:var(--mute);max-width:60ch}
+.lock{font-size:13px;color:var(--mute);display:flex;gap:6px;align-items:center}
+.input{background:var(--panel);border-radius:16px;padding:16px;margin-bottom:22px;display:grid;gap:14px}
+.src{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:999px;padding:3px;background:var(--bg)}
+.seg button{font:600 14px Inter,sans-serif;border:0;background:none;color:var(--mute);padding:8px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+#url{flex:1 1 280px}
+.opts{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute)}
+select,input[type=text],input[type=url]{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px}
+.btn{font:600 15px Inter,sans-serif;border:0;border-radius:999px;padding:11px 18px;min-height:44px;cursor:pointer;background:var(--hl);color:#141414;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.filebox{flex:1 1 280px;display:flex;align-items:center;gap:10px;border:1.5px dashed var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;background:var(--bg);color:var(--mute)}
+.filebox.over{border-color:var(--acc)}
+.status{font-size:14px;color:var(--mute)}
+.status.err{color:var(--acc)}
+.prog{height:6px;background:var(--line);border-radius:9px;overflow:hidden;margin-top:6px}
+.prog i{display:block;height:100%;width:0;background:var(--acc);transition:width .3s}
+.main{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:28px;align-items:start}
+.stage{position:sticky;top:12px}
+.screen{position:relative;aspect-ratio:9/16;max-height:76vh;width:100%;background:#0c0c0c;border-radius:22px;overflow:hidden;box-shadow:0 0 0 6px light-dark(#141414,#2a2a28);container-type:inline-size}
+.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.idle{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#ccc;text-align:center;padding:28px;background:radial-gradient(120% 80% at 50% 0%,#2b2a22,#0c0c0c)}
+.card{position:absolute;left:50%;transform:translateX(-50%);width:88%;text-align:center;pointer-events:none}
+.card.top{top:8%}.card.mid{top:50%;transform:translate(-50%,-50%)}.card.bot{bottom:15%}
+.card .w{display:inline-block;background:var(--hl);color:#141414;font:800 clamp(24px,8cqw,38px)/1.1 Outfit,sans-serif;padding:8px 16px;border-radius:12px}
+.card .w.sl{background:#b794ff}
+.card .m{display:inline-block;margin-top:8px;background:rgba(0,0,0,.8);color:#fff;font:600 clamp(16px,5.2cqw,23px)/1.25 Inter,sans-serif;padding:6px 14px;border-radius:10px}
+.card .p{display:block;margin-top:6px;color:#fff;font-size:13px;text-shadow:0 1px 3px #000}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.side{display:flex;flex-direction:column;gap:12px}
+.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);flex-wrap:wrap}
+.tabs button{font:600 15px Inter,sans-serif;background:none;border:0;color:var(--mute);padding:10px 12px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1.5px}
+.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--hl)}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.count{font:700 15px Outfit,sans-serif}
+.chk{display:flex;gap:6px;align-items:center;font-size:14px}
+.row{display:grid;grid-template-columns:3.6em minmax(0,1fr) minmax(0,1.4fr);gap:12px;align-items:baseline;padding:11px 8px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:8px}
+.row:hover{background:var(--panel)}
+.row.on{background:color-mix(in srgb,var(--hl) 45%,var(--bg))}
+.row .t{font-variant-numeric:tabular-nums;color:var(--mute);font-size:13px;white-space:nowrap}
+.row .k{font:700 18px/1.2 Outfit,sans-serif;overflow-wrap:anywhere}
+.row .pos{display:block;font:500 12px Inter,sans-serif;color:var(--mute)}
+.tag{display:inline-block;font:700 11px Inter,sans-serif;color:#fff;background:var(--slang);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.row input{width:100%;font-size:16px;padding:5px 8px;border-radius:8px;border:1.5px solid transparent;background:transparent;color:var(--ink)}
+.row input:hover,.row input:focus{border-color:var(--line);background:var(--bg)}
+.row .note{grid-column:2/-1;font-size:14px;color:var(--mute);margin-top:-6px}
+.sent{padding:10px 8px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:8px}
+.sent.on{background:color-mix(in srgb,var(--hl) 35%,var(--bg))}
+.sent .tr{color:var(--mute);font-size:15px;margin-top:2px}
+.sent .t,.hist .t{font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums}
+.hist{display:flex;gap:12px;justify-content:space-between;align-items:center;padding:10px 8px;border-bottom:1px solid var(--line)}
+.hist b{display:block;overflow-wrap:anywhere}
+.hist button{font:600 13px Inter,sans-serif}
+.empty{padding:32px 16px;text-align:center;color:var(--mute);border:1.5px dashed var(--line);border-radius:14px}
+.empty .demo{display:inline-flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:12px}
+.empty .demo b{background:#b794ff;color:#141414;font:800 24px Outfit,sans-serif;padding:4px 14px;border-radius:10px}
+.empty .demo span{background:var(--ink);color:var(--bg);font-weight:600;padding:3px 12px;border-radius:8px}
+@media(max-width:820px){.main{grid-template-columns:minmax(0,1fr)}.stage{position:static;max-width:440px;margin:0 auto;width:100%}.screen{max-height:68vh}}
+@media(max-width:520px){.row{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}.row .t{display:none}.row .note{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Kosakata <mark>Video</mark></h1>
+      <p class="lead">Unggah video atau tempel link. Setiap kosakata, idiom dan slang muncul di layar bersama artinya tepat saat diucapkan.</p>
+    </div>
+    <span class="lock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Pribadi: berjalan di komputer Anda</span>
+  </header>
+
+  <form class="input" id="form">
+    <div class="src">
+      <div class="seg" role="group" aria-label="Sumber video">
+        <button type="button" data-src="file" aria-pressed="true">Unggah file</button>
+        <button type="button" data-src="url" aria-pressed="false">Tempel link</button>
+      </div>
+      <label class="filebox" id="filebox" tabindex="0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><span id="fname">Pilih atau tarik video ke sini</span><input type="file" id="file" accept="video/*,audio/*" hidden></label>
+      <input type="url" id="url" placeholder="https://www.facebook.com/… · YouTube · TikTok · Instagram · X" hidden aria-label="Link video">
+    </div>
+    <div class="opts">
+      <label class="f">Arti dalam<select id="tgt"></select></label>
+      <label class="f">Bahasa video<select id="srcLang"><option value="">Deteksi otomatis</option></select></label>
+      <label class="f">Model suara
+        <select id="whisper">
+          <option value="small">Seimbang (small)</option>
+          <option value="large-v3-turbo">Paling akurat, cepat (turbo)</option>
+          <option value="medium">Akurat (medium)</option>
+          <option value="base">Cepat (base)</option>
+          <option value="large-v3">Paling akurat, lambat (large-v3)</option>
+        </select></label>
+      <label class="f">Level saya
+        <select id="level"><option value="pemula">Pemula</option><option value="menengah" selected>Menengah</option><option value="mahir">Mahir</option></select></label>
+      <button class="btn" id="go" type="submit">Buat kosakata</button>
+    </div>
+    <div>
+      <div class="status" id="status">Belum ada video.</div>
+      <div class="prog" id="progWrap" hidden><i id="prog"></i></div>
+    </div>
+  </form>
+
+  <div class="main">
+    <section class="stage">
+      <div class="screen">
+        <video id="video" playsinline controls hidden></video>
+        <div class="idle" id="idle"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ffe14d" stroke-width="1.8"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg>Video akan diputar di sini.</div>
+        <div class="card bot" id="card" hidden><span class="w" id="cw"></span><br><span class="m" id="cm"></span><span class="p" id="cp"></span></div>
+      </div>
+      <div class="bar">
+        <label class="f">Posisi kartu<select id="pos"><option value="top">Atas</option><option value="mid">Tengah</option><option value="bot" selected>Bawah</option></select></label>
+        <button class="btn ghost" id="rec" disabled>Unduh video + subtitle</button>
+      </div>
+    </section>
+
+    <section class="side">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="vocab">Kosakata</button>
+        <button role="tab" aria-selected="false" data-tab="sent">Transkrip</button>
+        <button role="tab" aria-selected="false" data-tab="hist">Riwayat</button>
+      </div>
+      <div class="tools" id="tools">
+        <span class="count" id="count">0 kata</span>
+        <span style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <label class="chk"><input type="checkbox" id="onlySlang"> Hanya slang</label>
+          <input type="text" id="q" placeholder="Cari" aria-label="Cari kata" style="width:8em">
+          <button class="btn ghost" id="csv" disabled>CSV</button>
+          <button class="btn ghost" id="srt" disabled>SRT</button>
+        </span>
+      </div>
+      <div id="vocabView"><div class="empty"><div class="demo"><b>no cap</b><span>serius, beneran</span></div><br>Kosakata dari video Anda muncul di sini: arti sesuai konteks, jenis kata, tanda <span class="tag">slang</span> dan penjelasannya. Klik kata untuk melompat ke bagian videonya.</div></div>
+      <div id="sentView" hidden></div>
+      <div id="histView" hidden></div>
+    </section>
+  </div>
+</div>
+
+<script>
+{
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = t => { t = Math.max(0, t || 0); return Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'); };
+const srtT = t => { const ms = Math.round(t * 1000), h = Math.floor(ms / 36e5), m = Math.floor(ms / 6e4) % 60, s = Math.floor(ms / 1e3) % 60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms % 1000).padStart(3,'0')}`; };
+let mode = 'file', file = null, job = null, R = null, cues = [], poll = null, busy = false;
+const pref = (k, v) => { try { if (v === undefined) return localStorage.getItem('kv-' + k); localStorage.setItem('kv-' + k, v); } catch {} };
+
+/* ---- pengaturan ---- */
+fetch('api/config').then(r => r.json()).then(c => {
+  const opts = Object.entries(c.languages).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('');
+  $('tgt').innerHTML = opts; $('srcLang').innerHTML += opts;
+  $('tgt').value = pref('tgt') || 'id';
+  if (!c.has_key) status('Kunci API Claude belum diisi. Buka file .env lalu isi ANTHROPIC_API_KEY, kemudian jalankan ulang.', null, true);
+});
+['tgt', 'whisper', 'level'].forEach(k => { const v = pref(k); if (v && k !== 'tgt') $(k).value = v; $(k).addEventListener('change', () => pref(k, $(k).value)); });
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+  mode = b.dataset.src;
+  document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  $('filebox').hidden = mode !== 'file'; $('url').hidden = mode !== 'url';
+  if (mode === 'url') $('url').focus();
+});
+const setFile = f => { if (!f) return; file = f; $('fname').textContent = f.name; };
+$('file').onchange = e => setFile(e.target.files[0]);
+$('filebox').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } };
+['dragover', 'dragenter'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); $('filebox').classList.add('over'); }));
+document.addEventListener('dragleave', () => $('filebox').classList.remove('over'));
+document.addEventListener('drop', e => { e.preventDefault(); $('filebox').classList.remove('over'); if (e.dataTransfer.files[0]) { document.querySelector('[data-src=file]').click(); setFile(e.dataTransfer.files[0]); } });
+$('pos').onchange = () => { $('card').className = 'card ' + $('pos').value; };
+
+function status(msg, p, err) {
+  $('status').textContent = msg; $('status').className = 'status' + (err ? ' err' : '');
+  $('progWrap').hidden = p == null; if (p != null) $('prog').style.width = Math.round(p * 100) + '%';
+}
+
+/* ---- kirim pekerjaan ---- */
+$('form').onsubmit = async e => {
+  e.preventDefault();
+  if (busy) return;
+  const fd = new FormData();
+  if (mode === 'file') { if (!file) return status('Pilih video dulu.', null, true); fd.append('file', file); }
+  else { const u = $('url').value.trim(); if (!/^https?:\/\//.test(u)) return status('Tempel link video yang diawali https://', null, true); fd.append('url', u); }
+  fd.append('tgt', $('tgt').value); fd.append('src', $('srcLang').value);
+  fd.append('whisper', $('whisper').value); fd.append('level', $('level').value);
+  busy = true; $('go').disabled = true; status(mode === 'file' ? 'Mengunggah video…' : 'Mengirim link…', 0);
+  try {
+    const r = await fetch('api/jobs', { method: 'POST', body: fd });
+    const d = await r.json(); if (!r.ok) throw new Error(d.detail || r.status);
+    if (mode === 'file') showVideo(URL.createObjectURL(file));
+    watch(d.id);
+  } catch (err) { status('Gagal: ' + err.message, null, true); busy = false; $('go').disabled = false; }
+};
+
+function watch(id) {
+  clearInterval(poll); job = id; R = null; cues = []; render();
+  const tick = async () => {
+    let j; try { j = await (await fetch('api/jobs/' + id)).json(); } catch { return; }
+    if (j.stage === 'done') { clearInterval(poll); load(j); return; }
+    if (j.stage === 'error') { clearInterval(poll); busy = false; $('go').disabled = false; status('Gagal: ' + j.message, null, true); loadHistory(); return; }
+    if (j.video && $('video').hidden) showVideo('api/jobs/' + id + '/video');
+    status(j.message || 'Memproses…', j.progress ?? 0);
+  };
+  tick(); poll = setInterval(tick, 1500);
+}
+function showVideo(src) { const v = $('video'); if (v.src !== src) v.src = src; v.hidden = false; $('idle').hidden = true; }
+function load(j) {
+  R = j.result; busy = false; $('go').disabled = false;
+  showVideo('api/jobs/' + j.id + '/video');
+  cues = R.vocab.flatMap(v => v.occ.map(o => ({ s: o.s, e: Math.max(o.e, o.s + 0.5), w: o.w, v }))).sort((a, b) => a.s - b.s);
+  status(j.message); render(); loadHistory();
+  $('rec').disabled = $('csv').disabled = $('srt').disabled = false;
+}
+
+/* ---- daftar ---- */
+function render() {
+  const q = $('q').value.trim().toLowerCase(), only = $('onlySlang').checked;
+  if (!R) { $('count').textContent = '0 kata'; $('sentView').innerHTML = ''; return; }
+  const list = R.vocab.map((v, i) => ({ v, i })).filter(({ v }) => (!only || v.slang) && (!q || v.term.toLowerCase().includes(q) || v.meaning.toLowerCase().includes(q)));
+  $('count').textContent = `${list.length} kata · ${R.vocab.filter(v => v.slang).length} slang`;
+  $('vocabView').innerHTML = list.map(({ v, i }) => `<div class="row" data-i="${i}"><span class="t">${fmt(v.s)}</span><span class="k">${esc(v.term)}${v.slang ? '<span class="tag">slang</span>' : ''}<span class="pos">${esc(v.pos)}${v.lemma && v.lemma.toLowerCase() !== v.term.toLowerCase() ? ' · ' + esc(v.lemma) : ''}</span></span><input value="${esc(v.meaning)}" aria-label="Arti ${esc(v.term)}">${v.note ? `<div class="note">${esc(v.note)}</div>` : ''}</div>`).join('') || '<div class="empty">Tidak ada kata yang cocok.</div>';
+  $('sentView').innerHTML = R.sentences.map((s, i) => `<div class="sent" data-i="${i}"><div class="t">${fmt(s.s)}</div><div>${esc(s.text)}</div><div class="tr">${esc(s.tr)}</div></div>`).join('');
+}
+$('q').oninput = render; $('onlySlang').onchange = render;
+$('vocabView').addEventListener('input', e => { const r = e.target.closest('.row'); if (r && R) R.vocab[+r.dataset.i].meaning = e.target.value; });
+$('vocabView').addEventListener('click', e => { if (e.target.tagName === 'INPUT') return; const r = e.target.closest('.row'); if (r && R) seek(R.vocab[+r.dataset.i].s); });
+$('sentView').addEventListener('click', e => { const r = e.target.closest('.sent'); if (r && R) seek(R.sentences[+r.dataset.i].s); });
+function seek(t) { const v = $('video'); v.currentTime = Math.max(0, t - 0.15); v.play().catch(() => {}); }
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+  const t = b.dataset.tab;
+  $('vocabView').hidden = t !== 'vocab'; $('sentView').hidden = t !== 'sent'; $('histView').hidden = t !== 'hist'; $('tools').hidden = t === 'hist';
+  if (t === 'hist') loadHistory();
+});
+
+/* ---- riwayat ---- */
+async function loadHistory() {
+  let list = []; try { list = await (await fetch('api/jobs')).json(); } catch {}
+  $('histView').innerHTML = list.length ? list.map(j => `<div class="hist" data-id="${esc(j.id)}"><div><b>${esc(j.title || 'video')}</b><span class="t">${new Date(j.created * 1000).toLocaleString('id-ID')} · ${esc(j.stage === 'done' ? j.message : j.stage === 'error' ? 'gagal' : 'diproses')}</span></div><span style="display:flex;gap:6px">${j.stage === 'done' ? '<button class="btn ghost" data-a="open">Buka</button>' : ''}<button class="btn ghost" data-a="del">Hapus</button></span></div>`).join('') : '<div class="empty">Belum ada riwayat.</div>';
+}
+$('histView').addEventListener('click', async e => {
+  const b = e.target.closest('button'), row = e.target.closest('.hist'); if (!b || !row) return;
+  const id = row.dataset.id;
+  if (b.dataset.a === 'open') { const j = await (await fetch('api/jobs/' + id)).json(); job = id; $('video').hidden = true; load(j); document.querySelector('[data-tab=vocab]').click(); }
+  if (b.dataset.a === 'del') {
+    if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Yakin hapus?'; return; }
+    await fetch('api/jobs/' + id, { method: 'DELETE' }); loadHistory();
+  }
+});
+loadHistory();
+
+/* ---- kartu di atas video ---- */
+const HOLD = 0.7;
+function cueAt(t) { let best = null; for (const c of cues) { if (c.s > t) break; if (t < c.e + HOLD) best = c; } return best; }
+let lastV = null, lastS = -1;
+function tick() {
+  const v = $('video'), c = R ? cueAt(v.currentTime) : null;
+  if (!c) { $('card').hidden = true; lastV = null; }
+  else {
+    $('card').hidden = false;
+    $('cw').textContent = c.w; $('cw').className = 'w' + (c.v.slang ? ' sl' : '');
+    $('cm').textContent = c.v.meaning; $('cp').textContent = c.v.slang && c.v.note ? c.v.note : c.v.pos;
+    if (lastV !== c.v) {
+      lastV = c.v;
+      document.querySelectorAll('.row.on').forEach(r => r.classList.remove('on'));
+      const r = document.querySelector(`.row[data-i="${R.vocab.indexOf(c.v)}"]`);
+      if (r) { r.classList.add('on'); if (!v.paused) r.scrollIntoView({ block: 'nearest' }); }
+    }
+  }
+  if (R) {
+    const si = R.sentences.findIndex(s => v.currentTime >= s.s && v.currentTime <= s.e + 0.3);
+    if (si !== lastS) { lastS = si; document.querySelectorAll('.sent.on').forEach(r => r.classList.remove('on')); if (si >= 0) document.querySelector(`.sent[data-i="${si}"]`)?.classList.add('on'); }
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ---- ekspor ---- */
+function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+const base = () => 'kosakata-' + (job || 'video');
+$('csv').onclick = () => {
+  const q = s => '"' + String(s ?? '').replace(/"/g, '""') + '"';
+  const rows = [['kata', 'arti', 'jenis', 'slang', 'catatan', 'waktu'], ...R.vocab.map(v => [v.term, v.meaning, v.pos, v.slang ? 'ya' : '', v.note, fmt(v.s)])];
+  download(new Blob(['﻿' + rows.map(r => r.map(q).join(',')).join('\n')], { type: 'text/csv' }), base() + '.csv');
+};
+$('srt').onclick = () => {
+  const s = R.sentences.map((x, i) => `${i + 1}\n${srtT(x.s)} --> ${srtT(x.e)}\n${x.text}\n${x.tr}\n`).join('\n');
+  download(new Blob([s], { type: 'text/plain' }), base() + '.srt');
+};
+
+/* ---- rekam video dengan kartu ---- */
+let actx, dest;
+function rr(g, x, y, w, h, r) { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); g.fill(); }
+function drawCard(g, W, H, c) {
+  if (!c) return;
+  const word = c.w, mean = c.v.meaning || '', base = Math.min(W, H * 0.5625);
+  const fw = Math.round(base * 0.08), fm = Math.round(base * 0.05);
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `800 ${fw}px Outfit, sans-serif`; const ww = Math.min(W * 0.94, g.measureText(word).width + fw * 0.8);
+  g.font = `600 ${fm}px Inter, sans-serif`; const mw = Math.min(W * 0.94, g.measureText(mean).width + fm * 1.2);
+  const hW = fw * 1.4, hM = fm * 1.6, gap = fm * 0.4, tot = hW + gap + hM, p = $('pos').value;
+  const y0 = p === 'top' ? H * 0.08 : p === 'mid' ? H / 2 - tot / 2 : H * 0.85 - tot;
+  g.fillStyle = c.v.slang ? '#b794ff' : '#ffe14d'; rr(g, W / 2 - ww / 2, y0, ww, hW, fw * 0.3);
+  g.fillStyle = '#141414'; g.font = `800 ${fw}px Outfit, sans-serif`; g.fillText(word, W / 2, y0 + hW / 2, W * 0.9);
+  if (mean) { g.fillStyle = 'rgba(0,0,0,.8)'; rr(g, W / 2 - mw / 2, y0 + hW + gap, mw, hM, fm * 0.4); g.fillStyle = '#fff'; g.font = `600 ${fm}px Inter, sans-serif`; g.fillText(mean, W / 2, y0 + hW + gap + hM / 2, W * 0.9); }
+}
+$('rec').onclick = async () => {
+  const v = $('video'); if (!v.videoWidth || busy) return;
+  busy = true; $('rec').disabled = $('go').disabled = true;
+  try {
+    const W = v.videoWidth, H = v.videoHeight, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d'), stream = cv.captureStream(30);
+    if (!actx) { actx = new AudioContext(); const src = actx.createMediaElementSource(v); dest = actx.createMediaStreamDestination(); src.connect(dest); src.connect(actx.destination); }
+    await actx.resume(); dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+    const mimeType = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+    const rec = new MediaRecorder(stream, mimeType ? { mimeType, videoBitsPerSecond: 6e6 } : {}), parts = [];
+    rec.ondataavailable = e => e.data.size && parts.push(e.data);
+    const stopped = new Promise(r => rec.onstop = r);
+    v.pause(); v.currentTime = 0; await new Promise(r => v.addEventListener('seeked', r, { once: true }));
+    rec.start(1000); await v.play();
+    await new Promise(res => { const draw = () => { g.drawImage(v, 0, 0, W, H); drawCard(g, W, H, cueAt(v.currentTime)); status(`Merekam… ${fmt(v.currentTime)} / ${fmt(v.duration)} (biarkan tab ini terbuka)`, v.currentTime / v.duration); v.ended ? res() : requestAnimationFrame(draw); }; draw(); });
+    rec.stop(); await stopped;
+    const ext = (rec.mimeType || mimeType).includes('mp4') ? 'mp4' : 'webm';
+    download(new Blob(parts, { type: rec.mimeType || 'video/webm' }), base() + '.' + ext);
+    status(`Video tersimpan (.${ext}).`);
+  } catch (e) { status('Gagal merekam: ' + e.message, null, true); }
+  finally { busy = false; $('rec').disabled = $('go').disabled = false; }
+};
+}
+</script>
+</body>
+</html>
