@@ -3,7 +3,7 @@ Kosakata Video - server lokal pribadi.
 
 Alur (mengikuti pola innovationmech/video-translate):
   video (upload / link) -> Whisper (faster-whisper, waktu per kata)
-  -> Claude (terjemahan kalimat + kosakata + slang) -> kartu kata di atas video.
+  -> Gemini / Ollama (gratis) atau Claude (terjemahan + kosakata + slang) -> kartu kata di atas video.
 
 Jalankan:  python app.py   lalu buka http://127.0.0.1:8000
 """
@@ -35,10 +35,17 @@ DATA.mkdir(parents=True, exist_ok=True)
 HOST = os.getenv("HOST", "127.0.0.1")
 PORT = int(os.getenv("PORT", "8000"))
 APP_PASSWORD = os.getenv("APP_PASSWORD", "")
+# Penerjemah: "gemini" (gratis, pakai kunci), "ollama" (gratis, offline di komputer ini) atau "claude" (berbayar)
+PROVIDER = (os.getenv("LLM_PROVIDER") or (
+    "gemini" if (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+    else "claude" if os.getenv("ANTHROPIC_API_KEY") else "ollama")).lower()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-opus-5-5")
 CLAUDE_EFFORT = os.getenv("CLAUDE_EFFORT", "medium")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "auto")
-BATCH = 40  # kalimat per permintaan ke Claude
+BATCH = 15 if PROVIDER == "ollama" else 40  # kalimat per permintaan ke penerjemah
 
 LANGUAGES = {
     "id": "Bahasa Indonesia", "en": "English", "ms": "Bahasa Melayu", "jv": "Basa Jawa",
@@ -186,13 +193,100 @@ For the numbered transcript sentences you receive:
    List each term once. Do not invent terms that are not in the transcript."""
 
 
-def analyze(sents, src_lang: str, tgt: str, level: str, jid: str, client: anthropic.Anthropic):
+class LLMError(RuntimeError):
+    pass
+
+
+PROVIDER_NAME = {"gemini": "Gemini", "ollama": "Ollama", "claude": "Claude"}.get(PROVIDER, PROVIDER)
+
+
+def ask_gemini(user: str) -> Analysis:
+    from google import genai
+    from google.genai import errors, types
+
+    client = genai.Client()  # membaca GEMINI_API_KEY
+    cfg = types.GenerateContentConfig(system_instruction=SYSTEM, response_mime_type="application/json",
+                                      response_schema=Analysis, temperature=0.2)
+    for attempt in range(4):
+        try:
+            r = client.models.generate_content(model=GEMINI_MODEL, contents=user, config=cfg)
+            break
+        except errors.ClientError as e:
+            if e.code == 429 and attempt < 3:  # batas gratis per menit: tunggu lalu coba lagi
+                time.sleep(25 * (attempt + 1))
+                continue
+            if e.code == 429:
+                raise LLMError("Batas gratis Gemini hari ini/menit ini tercapai. Coba lagi nanti.") from e
+            if e.code in (400, 401, 403) and "key" in str(e).lower():
+                raise LLMError("Kunci Gemini salah. Periksa GEMINI_API_KEY di file .env.") from e
+            raise LLMError(f"Gemini error {e.code}: {e.message}") from e
+        except errors.ServerError as e:
+            if attempt < 3:
+                time.sleep(10)
+                continue
+            raise LLMError(f"Server Gemini sedang sibuk ({e.code}). Coba lagi nanti.") from e
+    if r.parsed is not None:
+        return r.parsed
+    try:
+        return Analysis.model_validate_json(r.text or "")
+    except Exception as e:  # noqa: BLE001
+        raise LLMError("Gemini tidak mengembalikan hasil untuk bagian ini.") from e
+
+
+def ask_ollama(user: str) -> Analysis:
+    import urllib.error
+    import urllib.request
+
+    body = json.dumps({
+        "model": OLLAMA_MODEL, "stream": False, "format": Analysis.model_json_schema(),
+        "options": {"temperature": 0.2, "num_ctx": 8192},
+        "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}],
+    }).encode()
+    req = urllib.request.Request(OLLAMA_URL + "/api/chat", body, {"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=900) as r:
+            data = json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            raise LLMError(f"Model Ollama '{OLLAMA_MODEL}' belum diunduh. Jalankan: ollama pull {OLLAMA_MODEL}") from e
+        raise LLMError(f"Ollama error {e.code}: {e.read()[:200]!r}") from e
+    except (urllib.error.URLError, ConnectionError) as e:
+        raise LLMError("Ollama belum berjalan. Pasang dari ollama.com, lalu jalankan: "
+                       f"ollama pull {OLLAMA_MODEL}  — atau isi GEMINI_API_KEY (gratis) di .env.") from e
+    try:
+        return Analysis.model_validate_json(data["message"]["content"])
+    except Exception as e:  # noqa: BLE001
+        raise LLMError("Ollama tidak mengembalikan hasil yang valid. Coba model yang lebih besar.") from e
+
+
+def ask_claude(user: str) -> Analysis:
+    client = anthropic.Anthropic()
+    resp = client.beta.messages.parse(
+        model=CLAUDE_MODEL,
+        max_tokens=16000,
+        betas=["server-side-fallback-2026-07-01"],
+        fallbacks="default",
+        output_config={"effort": CLAUDE_EFFORT},
+        system=SYSTEM,
+        messages=[{"role": "user", "content": user}],
+        output_format=Analysis,
+    )
+    if resp.stop_reason == "refusal" or resp.parsed_output is None:
+        raise LLMError("Claude menolak atau tidak mengembalikan hasil untuk bagian ini.")
+    return resp.parsed_output
+
+
+def ask_llm(user: str) -> Analysis:
+    return {"gemini": ask_gemini, "ollama": ask_ollama, "claude": ask_claude}[PROVIDER](user)
+
+
+def analyze(sents, src_lang: str, tgt: str, level: str, jid: str):
     tgt_name = LANGUAGES.get(tgt, tgt)
     out_s: dict[int, str] = {}
     vocab: dict[str, dict] = {}
     batches = [sents[i:i + BATCH] for i in range(0, len(sents), BATCH)]
     for bi, batch in enumerate(batches):
-        set_job(jid, stage="llm", message=f"Claude menerjemahkan & menyusun kosakata… ({bi + 1}/{len(batches)})",
+        set_job(jid, stage="llm", message=f"{PROVIDER_NAME} menerjemahkan & menyusun kosakata… ({bi + 1}/{len(batches)})",
                 progress=bi / len(batches))
         start = bi * BATCH
         context = " ".join(s["text"] for s in sents[max(0, start - 3):start])
@@ -203,19 +297,7 @@ def analyze(sents, src_lang: str, tgt: str, level: str, jid: str, client: anthro
             + (f"Previous context (do not translate): {context}\n" if context else "")
             + f"\nTranscript:\n{lines}"
         )
-        resp = client.beta.messages.parse(
-            model=CLAUDE_MODEL,
-            max_tokens=16000,
-            betas=["server-side-fallback-2026-07-01"],
-            fallbacks="default",
-            output_config={"effort": CLAUDE_EFFORT},
-            system=SYSTEM,
-            messages=[{"role": "user", "content": user}],
-            output_format=Analysis,
-        )
-        if resp.stop_reason == "refusal" or resp.parsed_output is None:
-            raise RuntimeError("Claude menolak atau tidak mengembalikan hasil untuk bagian ini.")
-        res: Analysis = resp.parsed_output
+        res = ask_llm(user)
         for s in res.sentences:
             out_s[s.i] = s.translation
         for v in res.vocab:
@@ -258,7 +340,6 @@ def locate(vocab, words, sents):
 def run_job(jid: str, src: Path | None, url: str | None, opts: dict):
     d = DATA / jid
     try:
-        client = anthropic.Anthropic()
         if url:
             set_job(jid, stage="download", message="Mengunduh video dari link…", progress=0)
             src = download_link(url, d, jid)
@@ -267,7 +348,7 @@ def run_job(jid: str, src: Path | None, url: str | None, opts: dict):
         if not words:
             raise RuntimeError("Tidak ada ucapan yang terdengar di video ini.")
         sents = to_sentences(words)
-        trans, vocab = analyze(sents, lang, opts["tgt"], opts["level"], jid, client)
+        trans, vocab = analyze(sents, lang, opts["tgt"], opts["level"], jid)
         for i, s in enumerate(sents):
             s["tr"] = trans.get(i, "")
         vocab = locate(vocab, words, sents)
@@ -275,6 +356,8 @@ def run_job(jid: str, src: Path | None, url: str | None, opts: dict):
         (d / "result.json").write_text(json.dumps(result, ensure_ascii=False))
         set_job(jid, stage="done", progress=1, message=f"Selesai: {len(vocab)} kosakata, "
                 f"{sum(v['slang'] for v in vocab)} slang/idiom.")
+    except LLMError as e:
+        set_job(jid, stage="error", message=str(e))
     except anthropic.AuthenticationError:
         set_job(jid, stage="error", message="Kunci API Claude salah atau belum diisi di file .env (ANTHROPIC_API_KEY).")
     except anthropic.RateLimitError:
@@ -298,8 +381,10 @@ def index():
 
 @app.get("/api/config")
 def config():
-    return {"languages": LANGUAGES, "model": CLAUDE_MODEL,
-            "has_key": bool(os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN"))}
+    return {"languages": LANGUAGES, "provider": PROVIDER_NAME,
+            "model": {"gemini": GEMINI_MODEL, "ollama": OLLAMA_MODEL, "claude": CLAUDE_MODEL}.get(PROVIDER),
+            "has_key": PROVIDER == "ollama" or bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+                                                    or os.getenv("ANTHROPIC_API_KEY"))}
 
 
 @app.post("/api/jobs")

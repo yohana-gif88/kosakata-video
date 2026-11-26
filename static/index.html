@@ -84,12 +84,13 @@ select,input[type=text],input[type=url]{font:inherit;font-size:16px;color:var(--
 </head>
 <body>
 <div class="wrap">
-  <header>
+  <header style="row-gap:4px">
     <div>
       <h1>Kosakata <mark>Video</mark></h1>
       <p class="lead">Unggah video atau tempel link. Setiap kosakata, idiom dan slang muncul di layar bersama artinya tepat saat diucapkan.</p>
     </div>
     <span class="lock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Pribadi: berjalan di komputer Anda</span>
+    <span class="lock" id="engine"></span>
   </header>
 
   <form class="input" id="form">
@@ -171,7 +172,8 @@ fetch('api/config').then(r => r.json()).then(c => {
   const opts = Object.entries(c.languages).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('');
   $('tgt').innerHTML = opts; $('srcLang').innerHTML += opts;
   $('tgt').value = pref('tgt') || 'id';
-  if (!c.has_key) status('Kunci API Claude belum diisi. Buka file .env lalu isi ANTHROPIC_API_KEY, kemudian jalankan ulang.', null, true);
+  if (!c.has_key) status('Kunci API belum diisi. Buka file .env lalu isi GEMINI_API_KEY (gratis), kemudian jalankan ulang.', null, true);
+  else $('engine').textContent = 'Penerjemah: ' + c.provider + ' (' + c.model + ')';
 });
 ['tgt', 'whisper', 'level'].forEach(k => { const v = pref(k); if (v && k !== 'tgt') $(k).value = v; $(k).addEventListener('change', () => pref(k, $(k).value)); });
 document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
