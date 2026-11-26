@@ -173,7 +173,7 @@ fetch('api/config').then(r => r.json()).then(c => {
   $('tgt').innerHTML = opts; $('srcLang').innerHTML += opts;
   $('tgt').value = pref('tgt') || 'id';
   if (!c.has_key) status('Kunci API belum diisi. Buka file .env lalu isi GEMINI_API_KEY (gratis), kemudian jalankan ulang.', null, true);
-  else $('engine').textContent = 'Penerjemah: ' + c.provider + ' (' + c.model + ')';
+  else $('engine').textContent = 'Penerjemah: ' + c.provider + ' (' + c.model + ')' + (c.basic ? ' · isi GEMINI_API_KEY gratis agar slang terdeteksi' : '');
 });
 ['tgt', 'whisper', 'level'].forEach(k => { const v = pref(k); if (v && k !== 'tgt') $(k).value = v; $(k).addEventListener('change', () => pref(k, $(k).value)); });
 document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {

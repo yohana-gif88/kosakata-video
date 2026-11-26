@@ -11,6 +11,12 @@ Alurnya mengikuti [innovationmech/video-translate](https://github.com/innovation
 | Terjemahan kalimat, kosakata, slang & penjelasannya | **Gemini** (gratis) atau **Ollama** (gratis, offline); Claude opsional |
 | Kartu kata di atas video, CSV, SRT, unduh video bersubtitle | Browser |
 
+## Buka langsung di browser (tanpa download)
+
+[![Buka di GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/yohana-gif88/kosakata-video?quickstart=1)
+
+Klik tombol di atas, lalu **Create codespace**. Tunggu 3–5 menit pada pembukaan pertama; aplikasi terbuka sendiri di tab baru. Alamatnya hanya bisa dibuka oleh akun GitHub Anda. Gratis sampai sekitar 60 jam pemakaian per bulan. Saat tidak dipakai, codespace berhenti otomatis setelah 30 menit.
+
 ## Pribadi
 
 Aplikasi berjalan di komputer Anda sendiri pada `http://127.0.0.1:8000`, jadi hanya Anda yang bisa membukanya. Video dan hasilnya disimpan di folder `data/` di komputer Anda. Dengan Gemini, hanya teks transkrip yang dikirim ke Google untuk diterjemahkan (catatan: data di paket gratis Gemini dapat dipakai Google untuk meningkatkan layanannya). Dengan Ollama, **tidak ada data yang keluar** dari komputer Anda.

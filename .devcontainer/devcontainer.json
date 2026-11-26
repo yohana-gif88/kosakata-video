@@ -1,0 +1,21 @@
+{
+  "name": "Kosakata Video",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "hostRequirements": { "cpus": 2, "memory": "8gb" },
+  "secrets": {
+    "GEMINI_API_KEY": {
+      "description": "Opsional tapi disarankan: kunci GRATIS dari Google AI Studio agar terjemahan slang akurat. Boleh dikosongkan.",
+      "documentationUrl": "https://aistudio.google.com/apikey"
+    }
+  },
+  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt && cp -n .env.example .env",
+  "postAttachCommand": "python app.py",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": { "label": "Kosakata Video", "onAutoForward": "openBrowser" }
+  },
+  "customizations": {
+    "codespaces": { "openFiles": [] },
+    "vscode": { "settings": { "workbench.startupEditor": "none" } }
+  }
+}

@@ -35,10 +35,11 @@ DATA.mkdir(parents=True, exist_ok=True)
 HOST = os.getenv("HOST", "127.0.0.1")
 PORT = int(os.getenv("PORT", "8000"))
 APP_PASSWORD = os.getenv("APP_PASSWORD", "")
-# Penerjemah: "gemini" (gratis, pakai kunci), "ollama" (gratis, offline di komputer ini) atau "claude" (berbayar)
+# Penerjemah: "gemini" (gratis, pakai kunci), "ollama" (gratis, offline), "google" (gratis tanpa kunci,
+# kurang paham slang) atau "claude" (berbayar). Tanpa pengaturan: Gemini bila ada kuncinya, selain itu Google.
 PROVIDER = (os.getenv("LLM_PROVIDER") or (
     "gemini" if (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
-    else "claude" if os.getenv("ANTHROPIC_API_KEY") else "ollama")).lower()
+    else "claude" if os.getenv("ANTHROPIC_API_KEY") else "google")).lower()
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
@@ -197,7 +198,64 @@ class LLMError(RuntimeError):
     pass
 
 
-PROVIDER_NAME = {"gemini": "Gemini", "ollama": "Ollama", "claude": "Claude"}.get(PROVIDER, PROVIDER)
+PROVIDER_NAME = {"gemini": "Gemini", "ollama": "Ollama", "claude": "Claude",
+                 "google": "Google Translate"}.get(PROVIDER, PROVIDER)
+
+STOP = set("""a an the and or but if so of to in on at by for from with as is am are was were be been being do does did
+have has had i me my you your we us our they them their he him his she her it its this that these those there here what
+which who whom when where why how not no yes oh uh um ah just very too also then than can could will would should may
+might must i'm you're we're they're he's she's it's that's there's don't doesn't didn't isn't aren't wasn't can't won't
+i've you've we've i'll you'll i'd all any some each more most other only own same into out up down off over again once
+about get got go going know really thing things one two""".split())
+
+
+def gtx(q: str, sl: str, tl: str, dict_=False):
+    import urllib.parse
+    import urllib.request
+    url = ("https://translate.googleapis.com/translate_a/single?client=gtx&dt=t" + ("&dt=bd" if dict_ else "")
+           + "&" + urllib.parse.urlencode({"sl": sl or "auto", "tl": tl, "q": q}))
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        d = json.loads(r.read())
+    text = "".join(x[0] for x in (d[0] or []) if x and x[0])
+    bd = [(b[0], b[1][:3]) for b in (d[1] or [])] if dict_ and len(d) > 1 and d[1] else []
+    return text, bd
+
+
+def analyze_google(sents, src_lang: str, tgt: str, jid: str):
+    """Cadangan tanpa kunci: terjemahan per kalimat + arti kamus per kata (tanpa deteksi slang)."""
+    from concurrent.futures import ThreadPoolExecutor
+    gl = {"jv": "jw", "he": "iw"}.get(tgt, tgt)
+    words: dict[str, int] = {}
+    for i, s in enumerate(sents):
+        for w in s["text"].split():
+            k = norm(w)
+            if len(k) > 1 and k not in STOP and not k.isdigit() and k not in words:
+                words[k] = i
+    total = len(sents) + len(words)
+    done = [0]
+
+    def step(fn):
+        try:
+            return fn()
+        except Exception:  # noqa: BLE001
+            return "", []
+        finally:
+            done[0] += 1
+            set_job(jid, stage="llm", message=f"Google Translate menerjemahkan… ({done[0]}/{total})",
+                    progress=done[0] / max(total, 1))
+
+    with ThreadPoolExecutor(4) as ex:
+        tr = list(ex.map(lambda s: step(lambda: gtx(s["text"], src_lang, gl)), sents))
+        wd = list(ex.map(lambda k: step(lambda: gtx(k, src_lang, gl, True)), words))
+    if sents and not any(t for t, _ in tr):
+        raise LLMError("Google Translate tidak bisa dihubungi. Isi GEMINI_API_KEY (gratis) agar lebih akurat.")
+    vocab = []
+    for (k, si), (text, bd) in zip(words.items(), wd):
+        alts = [t for _, ts in bd for t in ts if t.lower() != text.lower()]
+        vocab.append({"term": k, "lemma": k, "meaning": ", ".join([text, *alts][:3]) if text else "",
+                      "pos": " / ".join(p for p, _ in bd[:2]), "slang": False, "note": "", "sentence": si})
+    return {i: t for i, (t, _) in enumerate(tr)}, vocab
 
 
 def ask_gemini(user: str) -> Analysis:
@@ -281,6 +339,8 @@ def ask_llm(user: str) -> Analysis:
 
 
 def analyze(sents, src_lang: str, tgt: str, level: str, jid: str):
+    if PROVIDER == "google":
+        return analyze_google(sents, src_lang, tgt, jid)
     tgt_name = LANGUAGES.get(tgt, tgt)
     out_s: dict[int, str] = {}
     vocab: dict[str, dict] = {}
@@ -382,8 +442,9 @@ def index():
 @app.get("/api/config")
 def config():
     return {"languages": LANGUAGES, "provider": PROVIDER_NAME,
-            "model": {"gemini": GEMINI_MODEL, "ollama": OLLAMA_MODEL, "claude": CLAUDE_MODEL}.get(PROVIDER),
-            "has_key": PROVIDER == "ollama" or bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+            "model": {"gemini": GEMINI_MODEL, "ollama": OLLAMA_MODEL, "claude": CLAUDE_MODEL}.get(PROVIDER, "tanpa kunci"),
+            "basic": PROVIDER == "google",
+            "has_key": PROVIDER in ("ollama", "google") or bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
                                                     or os.getenv("ANTHROPIC_API_KEY"))}
 
 
